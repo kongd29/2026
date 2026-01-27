@@ -1,0 +1,27 @@
+name: Daily Public Notice Scraper
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 매일 한국 시간 오전 9시에 자동 실행
+  workflow_dispatch: # 수동으로도 실행 가능하게 함
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install
+      - name: Run Scraper
+        run: node collector.js
+      - name: Commit and Push changes # 수집된 feed.json을 다시 저장소에 업데이트
+        run: |
+          git config --global user.name 'scraper-bot'
+          git config --global user.email 'bot@github.com'
+          git add feed.json
+          git commit -m "Update feed data" || exit 0
+          git push
