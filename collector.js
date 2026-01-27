@@ -23,16 +23,10 @@ const SOURCES = [
 ];
 
 async function collect() {
-    console.log("🚀 [서버 수집 모드] 15개 기관 수집을 시작합니다.");
-    
-    // 💡 서버 배포를 위해 headless: "new"로 수정하고 리눅스 환경 옵션을 추가했습니다.
+    console.log("🚀 [GitHub Actions] 서버 수집을 시작합니다...");
     const browser = await puppeteer.launch({ 
         headless: "new", 
-        args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage'
-        ] 
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
     });
     
     let allItems = [];
@@ -41,14 +35,11 @@ async function collect() {
 
     for (const s of SOURCES) {
         const page = await browser.newPage();
-        
-        // 💡 실제 브라우저처럼 보이기 위한 유저 에이전트 설정
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
         try {
-            console.log(`[작업] ${s.name} 접속...`);
+            console.log(`[작업] ${s.name} 분석 중...`);
             await page.goto(s.url, { waitUntil: 'networkidle2', timeout: 60000 });
-            await new Promise(r => setTimeout(r, 5000)); // 로딩 대기 시간 넉넉히
+            await new Promise(r => setTimeout(r, 6000));
 
             const data = await page.evaluate((kws, sName, sId) => {
                 const results = [];
@@ -67,30 +58,12 @@ async function collect() {
             if (data.length > 0) {
                 allItems = allItems.concat(data.map(d => ({ ...d, notice_date: new Date().toISOString().split("T")[0], is_new: true })));
                 siteStatus[s.id] = "success";
-                console.log(`  └─ ✅ 성공: ${data.length}건`);
-            } else {
-                siteStatus[s.id] = "zero";
-                console.log(`  └─ ⚠️ 0건 (키워드 없음)`);
-            }
-        } catch (e) {
-            siteStatus[s.id] = "fail";
-            console.log(`  └─ ❌ 에러/차단: ${e.message}`);
-        } finally { 
-            if (!page.isClosed()) await page.close(); 
-        }
+            } else { siteStatus[s.id] = "zero"; }
+        } catch (e) { siteStatus[s.id] = "fail"; }
+        finally { if (!page.isClosed()) await page.close(); }
     }
-    
     await browser.close();
-    
-    // 💡 깃허브 액션이 인식할 수 있도록 파일 저장
-    const finalData = { 
-        generated_at: new Date().toISOString(), 
-        items: allItems, 
-        status: siteStatus 
-    };
-    
-    fs.writeFileSync('feed.json', JSON.stringify(finalData, null, 2));
-    console.log(`\n🏆 15개 기관 수집 종료! (총 ${allItems.length}건)`);
+    fs.writeFileSync('feed.json', JSON.stringify({ generated_at: new Date().toISOString(), items: allItems, status: siteStatus }, null, 2));
+    console.log(`\n🏆 총 ${allItems.length}건 수집 완료!`);
 }
-
 collect();
