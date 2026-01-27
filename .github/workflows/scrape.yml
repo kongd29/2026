@@ -3,13 +3,13 @@ name: Public Notice Scraper Bot
 on:
   schedule:
     - cron: '0 0 * * *' # 매일 오전 9시 실행
-  workflow_dispatch: # 수동 실행 버튼 활성화
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions: # 💡 창고에 데이터를 쓸 수 있는 권한을 명시적으로 줍니다.
-      contents: write
+    permissions:
+      contents: write # 💡 파일을 창고에 다시 쓸 수 있는 권한을 줍니다.
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: npm install puppeteer puppeteer-extra puppeteer-extra-plugin-stealth
+        run: npm install puppeteer-extra puppeteer-extra-plugin-stealth puppeteer
       - name: Run Scraper
         run: node collector.js
       - name: Commit and Push changes
@@ -25,5 +25,5 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add feed.json
-          git commit -m "Update feed.json with new notices" || exit 0
+          git commit -m "Update feed.json" || exit 0
           git push
