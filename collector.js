@@ -23,7 +23,7 @@ const SOURCES = [
 ];
 
 async function collect() {
-    console.log("🚀 [GitHub Actions] 서버 수집을 시작합니다...");
+    console.log("🚀 [서버 모드] 수집을 시작합니다...");
     const browser = await puppeteer.launch({ 
         headless: "new", 
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
@@ -36,6 +36,7 @@ async function collect() {
     for (const s of SOURCES) {
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        
         try {
             console.log(`[작업] ${s.name} 분석 중...`);
             await page.goto(s.url, { waitUntil: 'networkidle2', timeout: 60000 });
